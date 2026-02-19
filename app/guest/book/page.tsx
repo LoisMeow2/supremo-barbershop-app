@@ -11,7 +11,6 @@ import { DateTimePicker } from '@/components/booking/datetime-picker';
 import { BarberSelector } from '@/components/booking/barber-selector';
 import { db } from '@/lib/supabase';
 import { Service, Barber } from '@/lib/types';
-import { ROUTES } from '@/lib/constants';
 
 export default function GuestBookPage() {
   const router = useRouter();
@@ -20,7 +19,7 @@ export default function GuestBookPage() {
   const [error, setError] = useState('');
 
   const [guestInfo, setGuestInfo] = useState({
-    email: '',
+    email: '', // This acts as the 'Name' field for your database
     phone: '',
   });
 
@@ -49,18 +48,28 @@ export default function GuestBookPage() {
   };
 
   const handleNextStep = () => {
-    if (step === 1 && (!guestInfo.email || !selectedHaircut)) {
-      setError('Please fill in all required fields');
-      return;
+    // Validation for Step 1: Name (email) and Haircut are mandatory
+    if (step === 1) {
+      if (!guestInfo.email.trim()) {
+        setError('Full Name is required to proceed.');
+        return;
+      }
+      if (!selectedHaircut) {
+        setError('Please select a haircut style.');
+        return;
+      }
     }
+    
     if (step === 2 && (!selectedService || !selectedDate || !selectedTime)) {
       setError('Please select service, date, and time');
       return;
     }
+    
     if (step === 3 && !selectedBarber) {
       setError('Please select a barber');
       return;
     }
+
     setError('');
     setStep(step + 1);
   };
@@ -92,7 +101,6 @@ export default function GuestBookPage() {
         return;
       }
 
-      // Redirect to receipt
       router.push(`/receipt?transaction_id=${data.data.guest_transaction_id}&email=${guestInfo.email}`);
     } catch (err) {
       setError('An error occurred during checkout');
@@ -110,7 +118,7 @@ export default function GuestBookPage() {
           {[1, 2, 3, 4].map((s) => (
             <div key={s} className="flex items-center gap-2">
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-colors ${
                   s <= step
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-200 text-gray-600'
@@ -120,7 +128,7 @@ export default function GuestBookPage() {
               </div>
               {s < 4 && (
                 <div
-                  className={`h-1 w-12 ${
+                  className={`h-1 w-12 transition-colors ${
                     s < step ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
                 />
@@ -136,24 +144,28 @@ export default function GuestBookPage() {
               <CardTitle>Guest Information & Style Selection</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="font-semibold">Your Information</h3>
-                <div>
-                  <label className="text-sm font-medium">Name</label>
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Your Information</h3>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
                   <Input
-                    type="email"
-                    placeholder="Name"
+                    type="text"
+                    placeholder="Enter your full name"
                     value={guestInfo.email}
-                    onChange={(e) =>
-                      setGuestInfo({ ...guestInfo, email: e.target.value })
-                    }
+                    className={error && !guestInfo.email ? 'border-red-500' : ''}
+                    onChange={(e) => {
+                      setError('');
+                      setGuestInfo({ ...guestInfo, email: e.target.value });
+                    }}
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-600">
-                    We'll send your receipt here
+                  <p className="text-xs text-gray-500">
+                    This name will be used for your booking and receipt.
                   </p>
                 </div>
-                <div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Phone (Optional)</label>
                   <Input
                     type="tel"
@@ -166,19 +178,22 @@ export default function GuestBookPage() {
                 </div>
               </div>
 
-              <HaircutSelector
-                onSelect={setSelectedHaircut}
-                selectedId={selectedHaircut?.id}
-              />
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-4 text-lg">Select Haircut Style <span className="text-red-500">*</span></h3>
+                <HaircutSelector
+                  onSelect={setSelectedHaircut}
+                  selectedId={selectedHaircut?.id}
+                />
+              </div>
 
               {error && (
-                <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 animate-in fade-in slide-in-from-top-1">
                   {error}
                 </div>
               )}
 
-              <Button onClick={handleNextStep} className="w-full">
-                Continue
+              <Button onClick={handleNextStep} className="w-full h-12 text-lg">
+                Continue to Service Selection
               </Button>
             </CardContent>
           </Card>
@@ -192,30 +207,30 @@ export default function GuestBookPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {servicesLoading ? (
-                <div>Loading services...</div>
+                <div className="py-10 text-center text-gray-500">Loading available services...</div>
               ) : (
                 <>
                   <div className="space-y-3">
                     <h3 className="font-semibold">Service</h3>
-                    <div className="space-y-2">
+                    <div className="grid gap-3">
                       {services.map((service) => (
                         <Card
                           key={service.service_id}
-                          className={`cursor-pointer transition-all ${
+                          className={`cursor-pointer transition-all border-2 ${
                             selectedService?.service_id === service.service_id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'hover:border-gray-400'
+                              ? 'border-blue-500 bg-blue-50/50'
+                              : 'hover:border-gray-300 border-transparent bg-gray-50'
                           }`}
                           onClick={() => setSelectedService(service)}
                         >
-                          <CardContent className="flex items-center justify-between pt-4">
+                          <CardContent className="flex items-center justify-between p-4">
                             <div>
-                              <p className="font-semibold">{service.service_name}</p>
-                              <p className="text-sm text-gray-600">
+                              <p className="font-bold text-gray-900">{service.service_name}</p>
+                              <p className="text-sm text-gray-500">
                                 {service.service_description}
                               </p>
                             </div>
-                            <p className="text-lg font-bold">₱{service.price}</p>
+                            <p className="text-xl font-black text-blue-600">₱{service.price}</p>
                           </CardContent>
                         </Card>
                       ))}
@@ -238,11 +253,7 @@ export default function GuestBookPage() {
               )}
 
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  className="flex-1"
-                >
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
                   Back
                 </Button>
                 <Button onClick={handleNextStep} className="flex-1">
@@ -272,11 +283,7 @@ export default function GuestBookPage() {
               )}
 
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(2)}
-                  className="flex-1"
-                >
+                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
                   Back
                 </Button>
                 <Button onClick={handleNextStep} className="flex-1">
@@ -294,10 +301,10 @@ export default function GuestBookPage() {
               <CardTitle>Confirm Your Booking</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4 rounded-lg bg-gray-50 p-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Email:</span>
-                  <span className="font-semibold">{guestInfo.email}</span>
+              <div className="space-y-4 rounded-xl border bg-gray-50 p-6">
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-gray-500">Client Name:</span>
+                  <span className="font-bold text-gray-900">{guestInfo.email}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Haircut Style:</span>
@@ -309,7 +316,7 @@ export default function GuestBookPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date & Time:</span>
-                  <span className="font-semibold">
+                  <span className="font-semibold text-blue-700">
                     {selectedDate} at {selectedTime}
                   </span>
                 </div>
@@ -319,15 +326,17 @@ export default function GuestBookPage() {
                     {selectedBarber?.barber_fname} {selectedBarber?.barber_lname}
                   </span>
                 </div>
-                <div className="border-t pt-4 flex justify-between text-lg">
-                  <span className="font-bold">Total:</span>
-                  <span className="font-bold">₱{selectedService?.price}</span>
+                <div className="border-t pt-4 flex justify-between text-xl">
+                  <span className="font-bold text-gray-900">Total Price:</span>
+                  <span className="font-black text-blue-600">₱{selectedService?.price}</span>
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600">
-                * Payment is due upon arrival. Cash only.
-              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+                <p className="text-sm text-amber-800">
+                  <strong>Notice:</strong> Payment is due upon arrival at the shop. We currently only accept Cash.
+                </p>
+              </div>
 
               {error && (
                 <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -347,7 +356,7 @@ export default function GuestBookPage() {
                 <Button
                   onClick={handleCheckout}
                   disabled={loading}
-                  className="flex-1"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   {loading ? 'Processing...' : 'Complete Booking'}
                 </Button>
