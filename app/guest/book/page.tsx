@@ -148,7 +148,7 @@ export default function GuestBookPage() {
                 <h3 className="font-semibold text-lg">Your Information</h3>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Full Name (required)<span className="text-red-500">*</span>
+                    Full Name (Required)<span className="text-red-500">*</span>
                   </label>
                   <Input
                     type="text"
