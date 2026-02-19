@@ -139,10 +139,10 @@ export default function GuestBookPage() {
               <div className="space-y-3">
                 <h3 className="font-semibold">Your Information</h3>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
+                  <label className="text-sm font-medium">Name</label>
                   <Input
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="Name"
                     value={guestInfo.email}
                     onChange={(e) =>
                       setGuestInfo({ ...guestInfo, email: e.target.value })
