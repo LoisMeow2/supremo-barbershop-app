@@ -64,7 +64,7 @@ export function generateReceiptPDF(data: ReceiptData): jsPDF {
       yPosition += 5;
     }
     if (data.customerEmail) {
-      pdf.text(`Email: ${data.customerEmail}`, 25, yPosition);
+      pdf.text(`Name: ${data.customerEmail}`, 25, yPosition);
       yPosition += 5;
     }
   }
